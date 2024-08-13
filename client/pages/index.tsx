@@ -3,7 +3,6 @@ import * as LitJsSdk from "@lit-protocol/lit-node-client";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { LitNetwork } from "@lit-protocol/constants";
 import { useAccount } from "wagmi";
-import { uploadToIPFS, litActionCode } from "../utils/index";
 import {
   LitAbility,
   generateAuthSig,
@@ -15,38 +14,52 @@ import { ethers } from "ethers";
 export default function Home() {
   const [litNodeClient, setLitNodeClient] = useState<any>(null);
   const [actionResult, setActionResult] = useState<string>("");
-  const [litActionIpfsHash, setLitActionIpfsHash] = useState<string>(
-    "QmY3RyH75oqxnUFj87EoBe6KXsbJoKiXBXP4Epbu9trmFq"
-  );
-
   const { address } = useAccount();
 
-  useEffect(() => {
-    const initLit = async () => {
-      const client = new LitJsSdk.LitNodeClient({
-        litNetwork: LitNetwork.DatilTest,
-      });
-      await client.connect();
-      console.log("LitNodeClient initialized");
-      setLitNodeClient(client);
-      console.log(client);
-    };
-
-    initLit();
-  }, []);
-
-  const uploadLitActionToIPFS = async () => {
-    try {
-      const hash = await uploadToIPFS(litActionCode);
-      setLitActionIpfsHash(hash);
-      console.log("Lit Action uploaded to IPFS with hash:", hash);
-    } catch (error) {
-      console.error("Failed to upload Lit Action to IPFS:", error);
+  const litActionCode = `
+  const go = async() => {
+  try {
+    const response = await fetch(mruServerUrl);
+    if (!response.ok) {
+      console.log("HTTP error!");
+      return false;
     }
-  };
+    const mruState = await response.json();
+    const userAccount = mruState.state.find(account => account.address.toLowerCase() === userAddress.toLowerCase());
+    if (!userAccount) {
+      console.log("User address  not found in MRU state");
+      return false;
+    }
+    const userBalance = userAccount.balance;
+    console.log(userBalance);
+    return userBalance >= minBalance;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+};
+
+go();
+`;
+
+  useEffect(() => {
+    if (address) {
+      const initLit = async () => {
+        const client = new LitJsSdk.LitNodeClient({
+          litNetwork: LitNetwork.Cayenne,
+        });
+        await client.connect();
+        console.log("LitNodeClient initialized");
+        setLitNodeClient(client);
+        console.log(client);
+      };
+
+      initLit();
+    }
+  }, [address]);
 
   const checkPermission = async () => {
-    if (!litNodeClient || !litActionIpfsHash || !address) {
+    if (!litNodeClient || !address) {
       console.log("LitNodeClient not initialized or Lit Action not uploaded");
       return;
     }
@@ -68,7 +81,7 @@ export default function Home() {
             ability: LitAbility.LitActionExecution,
           },
         ],
-       
+
         authNeededCallback: async ({
           resourceAbilityRequests,
           expiration,
@@ -98,11 +111,13 @@ export default function Home() {
       }
 
       const response = await litNodeClient.executeJs({
-        ipfsId: litActionIpfsHash,
+        code: litActionCode,
+        /* //note: since Lit actions are executed in a sandboxed environment on the Lit nodes, it does
+        not have access to local network, the mruServerUrl should be a deployed server url, not a localhost url. */
         jsParams: {
-          mruServerUrl: "http://localhost:3000",
+          mruServerUrl: "",
+          userAddress: address,
           minBalance: 100,
-          userAddress: address
         },
         sessionSigs: sessionSigs,
       });
@@ -134,13 +149,7 @@ export default function Home() {
       ) : (
         <div>
           <p>Connected Address: {address}</p>
-          <button onClick={uploadLitActionToIPFS}>
-            Upload Lit Action to IPFS
-          </button>
-          {litActionIpfsHash && (
-            <p>Lit Action IPFS Hash: {litActionIpfsHash}</p>
-          )}
-          <button onClick={performRestrictedAction} disabled={!litActionIpfsHash}>
+          <button onClick={performRestrictedAction}>
             Perform Restricted Action
           </button>
           {actionResult && <p>{actionResult}</p>}

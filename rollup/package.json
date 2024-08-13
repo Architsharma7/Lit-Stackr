@@ -7,8 +7,6 @@
     "test": "mocha --require ts-node/register src/**/*.test.ts"
   },
   "dependencies": {
-    "@lit-protocol/constants": "^6.4.2",
-    "@lit-protocol/lit-node-client": "^6.4.2",
     "@stackr/sdk": "latest",
     "cors": "^2.8.5",
     "ethers": "^6.7.1",

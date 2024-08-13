@@ -86,22 +86,6 @@ app.get("/", (_req: Request, res: Response) => {
   return res.send({ state: erc20Machine?.state });
 });
 
-app.get("/balance/:address", (req: Request, res: Response) => {
-  const { address } = req.params;
-  const state = erc20Machine?.state;
-  if (!state) {
-    return res.status(500).send({ error: "State not initialized" });
-  }
-  
-  const account = state.find(leaf => leaf.address.toLowerCase() === address.toLowerCase());
-  if (!account) {
-    return res.status(404).send({ error: "Account not found" });
-  }
-  
-  return res.send({ balance: account.balance });
-});
-
-
 app.listen(3000, () => {
   console.log("listening on port 3000");
 });
