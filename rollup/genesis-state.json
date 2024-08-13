@@ -1,0 +1,16 @@
+{
+    "state": [
+        {
+            "address": "0x3fdF69DA53299Cf8c179B19A644664a3bb6b7bBf",
+            "balance": 111,
+            "nonce": 1,
+            "allowances": []
+        },
+        {
+            "address": "0x1F5a59E63A40acCE01430232054828E6dcDFB379",
+            "balance": 99,
+            "nonce": 2,
+            "allowances": []
+        }
+    ]
+}
